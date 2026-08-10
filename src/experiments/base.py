@@ -44,7 +44,9 @@ class BaseExperiment:
     #==========Setters==========
     def _set_wandb(self):
         now = datetime.now()
-        wandb.login(key=self.wandb_key)
+        if self.wandb_key is not None:
+            wandb.login(key=self.wandb_key)
+            
         self.wandb_run = wandb.init(
             dir=self.results_dir,
             config=self.cfg,

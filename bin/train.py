@@ -27,9 +27,9 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     train = TrainExperiment(
-        **vars(args), wandb_key='ad6dfde6b67458b23b722ca23221f8d82d3cf713')
+        **vars(args), wandb_key=None)
     train.run()
     
     intervene = InterveneExperiment(
-        **vars(args), wandb_key='ad6dfde6b67458b23b722ca23221f8d82d3cf713')
+        **vars(args), wandb_key=None)
     intervene.run()

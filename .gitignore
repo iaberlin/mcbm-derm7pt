@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# info sheet
+faq/cluster_info.txt
+
+# Experiment outputs
+logs/
+results/
+
+# Environments
+venv/
+.venv/

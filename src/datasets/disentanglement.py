@@ -208,8 +208,12 @@ class MPI3D(DisentanglementDataset):
 
     def _read_dataset(self, npz_path):
         dataset = np.load(npz_path, allow_pickle=True)
-        self.images = dataset['images']
-        self.labels = dataset['labels']
+        self.images = dataset['images'].transpose(0, 3, 1, 2)
+        if "labels" in dataset.files:
+            self.labels = dataset["labels"]
+        else:
+            factor_sizes = [6, 6, 2, 3, 3, 40, 40]
+            self.labels = np.indices(factor_sizes).reshape(7, -1).T
 
 
 

@@ -17,7 +17,7 @@ from .base import BaseExperiment
 class TrainExperiment(BaseExperiment):
 
     experiment_name = "train"
-    wandb_offline = False
+    wandb_offline = True
     def __init__(
         self, 
         continue_training=False, 

@@ -10,7 +10,7 @@ from .base import BaseExperiment
 class InterveneExperiment(BaseExperiment):
 
     experiment_name = "intervene"
-    wandb_offline = False
+    wandb_offline = True
 
     def __init__(self, **kwargs) -> None:
 
