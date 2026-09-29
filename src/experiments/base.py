@@ -42,11 +42,50 @@ class BaseExperiment:
         self._set_all()
 
     #==========Setters==========
-    def _set_wandb(self):
-        now = datetime.now()
-        if self.wandb_key is not None:
-            wandb.login(key=self.wandb_key)
+    # def _set_wandb(self):
+    #     now = datetime.now()
+    #     if self.wandb_key is not None:
+    #         wandb.login(key=self.wandb_key)
             
+    #     self.wandb_run = wandb.init(
+    #         dir=self.results_dir,
+    #         config=self.cfg,
+    #         project='mcbm',
+    #         group=self.experiment_name,
+    #         mode="offline" if self.wandb_offline else "online",
+    #         name="{experiment_name}_{config_file}_{seed}_{date}".format(
+    #             experiment_name=self.experiment_name,
+    #             config_file=self.config_file,
+    #             seed=self.seed,
+    #             date=now.strftime("%m-%d_%H:%M"),
+    #         ),
+    #     )
+
+    def _set_wandb(self):
+        if not self.wandb_key:
+            # Kein eigener wandb-Key gesetzt -- KEIN wandb.login()/init()
+            # ausfuehren, um nicht versehentlich mit einem fremden
+            # (z.B. hartcodierten) API-Key zu einem fremden Account zu
+            # loggen. Stattdessen ein lokaler No-Op-Dummy, der .log()
+            # sicher ins Leere laufen laesst, ohne den Trainingscode
+            # (der self.wandb_run.log(...) unconditional aufruft)
+            # zu brechen. Siehe Debugging-Notiz vom 2026-08-26.
+            class _DummyWandbRun:
+                summary = {}
+                def log(self, *args, **kwargs):
+                    pass
+                def finish(self, *args, **kwargs):
+                    pass
+            
+            self.wandb_run = _DummyWandbRun()
+            print(
+                "[wandb] Kein wandb_key uebergeben -- wandb-Logging "
+                "deaktiviert (lokaler Dummy-Run, kein Login/Sync)."
+            )
+            return
+ 
+        now = datetime.now()
+        wandb.login(key=self.wandb_key)
         self.wandb_run = wandb.init(
             dir=self.results_dir,
             config=self.cfg,

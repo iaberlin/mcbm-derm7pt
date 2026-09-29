@@ -38,6 +38,11 @@ class TrainExperiment(BaseExperiment):
         self.test_loader, _, _ = get_loader(
             train=False, seed=self.seed, **self.cfg['data'], return_nuisances=True)
 
+        # log training sizes
+        n_train = len(self.train_loader.dataset)
+        n_test = len(self.test_loader.dataset)
+        print(f"[dataset sizes] seed={self.seed}  train={n_train}  test={n_test}")
+
     def _set_optimizer(self):
         self.optimizer, self.scheduler = get_optimizer_scheduler(
             params=self.model.parameters(),
