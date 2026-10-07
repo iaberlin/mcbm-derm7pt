@@ -30,6 +30,8 @@ if __name__ == "__main__":
         **vars(args), wandb_key=None)
     train.run()
     
-    intervene = InterveneExperiment(
-        **vars(args), wandb_key=None)
-    intervene.run()
+    # only models taht have concepts do the intervention, i.e. vanilla models dont
+    if getattr(train.model, "has_concepts", False):
+        intervene = InterveneExperiment(
+            **vars(args), wandb_key=None)
+        intervene.run()
