@@ -5,7 +5,7 @@ from .train import TrainExperiment
 class TestExperiment(TrainExperiment):
 
     experiment_name = "test"
-    wandb_offline = True
+    wandb_offline = False
 
     def __init__(self, **kwargs) -> None:
 

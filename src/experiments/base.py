@@ -1,6 +1,9 @@
 import os
+from dotenv import load_dotenv
 from datetime import datetime
 
+import random
+import numpy as np
 import wandb
 from pathlib import Path
 import torch
@@ -19,6 +22,7 @@ class BaseExperiment:
         device='cuda', 
         parallel=True,
         seed=42,
+        split_seed=42
     ) -> None:
 
         self.config_file = config_file
@@ -26,6 +30,7 @@ class BaseExperiment:
         self.device = torch.device(device) if torch.cuda.is_available() else torch.device('cpu')
         self.parallel = parallel
         self.seed = seed
+        self.split_seed = split_seed
 
         root = Path(__file__).resolve().parents[2]
         config_subpath = "-".join(config_file.split("-")[:2]) if \
@@ -62,34 +67,14 @@ class BaseExperiment:
     #     )
 
     def _set_wandb(self):
-        if not self.wandb_key:
-            # Kein eigener wandb-Key gesetzt -- KEIN wandb.login()/init()
-            # ausfuehren, um nicht versehentlich mit einem fremden
-            # (z.B. hartcodierten) API-Key zu einem fremden Account zu
-            # loggen. Stattdessen ein lokaler No-Op-Dummy, der .log()
-            # sicher ins Leere laufen laesst, ohne den Trainingscode
-            # (der self.wandb_run.log(...) unconditional aufruft)
-            # zu brechen. Siehe Debugging-Notiz vom 2026-08-26.
-            class _DummyWandbRun:
-                summary = {}
-                def log(self, *args, **kwargs):
-                    pass
-                def finish(self, *args, **kwargs):
-                    pass
-            
-            self.wandb_run = _DummyWandbRun()
-            print(
-                "[wandb] Kein wandb_key uebergeben -- wandb-Logging "
-                "deaktiviert (lokaler Dummy-Run, kein Login/Sync)."
-            )
-            return
  
         now = datetime.now()
         wandb.login(key=self.wandb_key)
         self.wandb_run = wandb.init(
             dir=self.results_dir,
             config=self.cfg,
-            project='mcbm',
+            entity="iadam",
+            project='mcbm-derm7pt',
             group=self.experiment_name,
             mode="offline" if self.wandb_offline else "online",
             name="{experiment_name}_{config_file}_{seed}_{date}".format(
@@ -99,6 +84,18 @@ class BaseExperiment:
                 date=now.strftime("%m-%d_%H:%M"),
             ),
         )
+   
+   # ensure that data split and train seed are handled separately
+    def _set_training_seed(self):
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
+
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(self.seed)
+
+        print(f"training seed: {self.seed} ")
+        print(f"split seed: {self.split_seed}")
 
     def _set_model(self):
         self.model = get_model(**self.model_kwargs, **self.cfg['model'])

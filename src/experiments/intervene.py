@@ -10,7 +10,7 @@ from .base import BaseExperiment
 class InterveneExperiment(BaseExperiment):
 
     experiment_name = "intervene"
-    wandb_offline = True
+    wandb_offline = False
 
     def __init__(self, **kwargs) -> None:
 
@@ -21,9 +21,9 @@ class InterveneExperiment(BaseExperiment):
     def _set_loaders(self):
         self.cfg['data']['batch_size'] = self.cfg['training']['batch_size']
         self.train_loader, self.model_kwargs, self.concepts_groups = get_loader(
-            train=True, seed=self.seed, **self.cfg['data'])
+            train=True, seed=self.split_seed, **self.cfg['data'])
         self.test_loader, _, _ = get_loader(
-            train=False, seed=self.seed, intervention_stage=True, **self.cfg['data'])
+            train=False, seed=self.split_seed, intervention_stage=True, **self.cfg['data'])
         self.concepts = [c for group in self.concepts_groups for c in group]
 
     def _set_all(self):

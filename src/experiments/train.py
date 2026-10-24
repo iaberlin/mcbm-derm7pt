@@ -2,6 +2,8 @@ import os
 
 import torch
 
+import hashlib
+
 from src.datasets import get_loader
 from src.helpers import (
     calc_accuracy, 
@@ -16,8 +18,9 @@ from .base import BaseExperiment
 
 class TrainExperiment(BaseExperiment):
 
+
     experiment_name = "train"
-    wandb_offline = True
+    wandb_offline = False
     def __init__(
         self, 
         continue_training=False, 
@@ -34,14 +37,27 @@ class TrainExperiment(BaseExperiment):
     def _set_loaders(self):
         self.cfg['data']['batch_size'] = self.cfg['training']['batch_size']
         self.train_loader, self.model_kwargs, _ = get_loader(
-            train=True, seed=self.seed, **self.cfg['data'], return_nuisances=True)
+            train=True, seed=self.split_seed, **self.cfg['data'], return_nuisances=True)
         self.test_loader, _, _ = get_loader(
-            train=False, seed=self.seed, **self.cfg['data'], return_nuisances=True)
+            train=False, seed=self.split_seed, **self.cfg['data'], return_nuisances=True)
 
         # log training sizes
         n_train = len(self.train_loader.dataset)
         n_test = len(self.test_loader.dataset)
-        print(f"[dataset sizes] seed={self.seed}  train={n_train}  test={n_test}")
+        print(f"dataset sizes: train={n_train}  test={n_test}")
+        print(f"split seed: {self.split_seed}")
+        print(f"train seed: {self.seed}")
+
+
+        # check split seeds
+        train_labels = self.train_loader.dataset.labels
+        test_labels = self.test_loader.dataset.labels
+
+        train_hash = hashlib.sha256(train_labels.tobytes()).hexdigest()
+        test_hash = hashlib.sha256(test_labels.tobytes()).hexdigest()
+
+        print(f"split hash train: {train_hash}")
+        print(f"split hash test: {test_hash}")
 
     def _set_optimizer(self):
         self.optimizer, self.scheduler = get_optimizer_scheduler(
@@ -53,6 +69,7 @@ class TrainExperiment(BaseExperiment):
     def _set_all(self):
         self._set_wandb()
         self._set_loaders()
+        self._set_training_seed()
         self._set_model()
         self._set_optimizer()
         self.to(self.device)

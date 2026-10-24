@@ -1,5 +1,7 @@
 import argparse
+import os
 
+from dotenv import load_dotenv
 from src.experiments import TestExperiment
 
 
@@ -20,12 +22,21 @@ def parse_args():
         default=42, 
         help='seed for initialization'
     )
+
+    parser.add_argument(
+    '--split_seed',
+    type=int,
+    default=42,
+    help='fixed seed for data filtering and train/test split',
+    )
     
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
+    wandb_api_key = os.getenv("WANDB_API_KEY")
+
     experiment = TestExperiment(
-        **vars(args), wandb_key='ad6dfde6b67458b23b722ca23221f8d82d3cf713')
+        **vars(args), wandb_key=wandb_api_key)
     experiment.run()
