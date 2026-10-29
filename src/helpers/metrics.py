@@ -4,7 +4,7 @@ from torch import Tensor
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, recall_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
 
@@ -116,3 +116,96 @@ def calc_map(preds, labels) -> float:
     # Interpolated AP = sum over recall steps
     AP = torch.sum((recalls[1:] - recalls[:-1]) * precisions[1:])
     return AP.item()
+
+
+
+def calc_label_accuracy(y_true, y_pred):
+    return accuracy_score(y_true, y_pred)
+
+
+def calc_balanced_accuracy(y_true, y_pred):
+    return balanced_accuracy_score(y_true, y_pred)
+
+
+def calc_macro_f1(y_true, y_pred):
+    return f1_score(y_true, y_pred, average="macro", zero_division=0)
+
+
+def calc_recall_per_class(y_true, y_pred, labels):
+    recalls = recall_score(
+        y_true, y_pred,
+        labels=labels,
+        average=None,
+        zero_division=0
+    )
+    return dict(zip(labels, recalls.tolist()))
+
+
+def calc_support_per_class(y_true, labels):
+    return {label: int(np.sum(y_true == label)) for label in labels}
+
+
+def calc_confusion_matrix(y_true, y_pred, labels):
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    return cm.tolist()
+
+
+def calc_all_metrics(y_true, y_pred, labels=None):
+
+    # Tensoren in NumPy Arrays umwandeln
+    if isinstance(y_true, torch.Tensor):
+        y_true = y_true.cpu().numpy()
+
+    if isinstance(y_pred, torch.Tensor):
+        y_pred = y_pred.cpu().numpy()
+
+    y_true = y_true.reshape(-1)
+    y_pred = y_pred.reshape(-1)
+
+    if labels is None:
+        labels = np.unique(np.concatenate([y_true, y_pred]))
+
+    
+    return {
+        "accuracy": calc_label_accuracy(y_true, y_pred),
+        "balanced_accuracy": calc_balanced_accuracy(y_true, y_pred),
+        "macro_f1": calc_macro_f1(y_true, y_pred),
+        "recall_per_class": calc_recall_per_class(y_true, y_pred, labels),
+        "support_per_class": calc_support_per_class(y_true, labels),
+        "confusion_matrix": calc_confusion_matrix(y_true, y_pred, labels)
+    }
+    
+
+def calc_concept_metrics(c_true, c_preds):
+    if isinstance(c_true, torch.Tensor):
+        c_true = c_true.cpu().numpy()
+    if isinstance(c_preds, torch.Tensor):
+        c_preds = c_preds.cpu().numpy()
+
+    # [N, n_concepts, 1] -> [N, n_concepts]
+    if c_preds.ndim == 3 and c_preds.shape[-1] == 1:
+        c_preds = c_preds.squeeze(-1)
+
+    if c_true.shape != c_preds.shape:
+        raise ValueError("Concept labels und predictions haben unterschiedliche Shapes.")
+
+    results = {
+        "concept_accuracy_per_concept": {},
+        "concept_macro_f1_per_concept": {},
+        "concept_recall_per_class": {},
+        "concept_support_per_class": {}
+    }
+
+    for j in range(c_true.shape[1]):
+        y_true = c_true[:, j]
+        y_pred = (c_preds[:, j] >= 0.5).astype(int)
+
+        metrics = calc_all_metrics(y_true, y_pred, labels=[0, 1])
+
+        results["concept_accuracy_per_concept"][j] = metrics["accuracy"]
+        results["concept_macro_f1_per_concept"][j] = metrics["macro_f1"]
+        results["concept_recall_per_class"][j] = metrics["recall_per_class"]
+        results["concept_support_per_class"][j] = metrics["support_per_class"]
+
+    return results
+

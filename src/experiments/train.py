@@ -117,6 +117,7 @@ class TrainExperiment(BaseExperiment):
         losses_epoch = {k: v / len(self.test_loader) for k, v in losses_epoch.items()}
         return losses_epoch
 
+
     #==========Evaluation==========
     def _prepare_labels_preds(self, loader):
         # Cache keys once
@@ -144,6 +145,7 @@ class TrainExperiment(BaseExperiment):
             labels_preds[k] = torch.cat(labels_preds[k], dim=0)
         return labels_preds
     
+
     def evaluate(self, epoch):
         self.eval()
         train_set = self._prepare_labels_preds(self.train_loader) if self.save else None
