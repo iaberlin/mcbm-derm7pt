@@ -19,7 +19,7 @@ model:
 training:
     batch_size: 128
     n_epochs: 50
-    save_epochs: 5
+    save_epochs: 10
     optimizer:    
         optimizer: SGD
         base_batch_size: 64
